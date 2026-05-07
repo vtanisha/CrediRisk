@@ -1,4 +1,8 @@
+import logging
 import os
+import warnings
+
+import joblib
 import numpy as np
 import pandas as pd
 import torch
@@ -6,11 +10,9 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import joblib
-import warnings
 
-# Suppress PyTorch warnings for cleanly written output
 warnings.filterwarnings("ignore")
+logger = logging.getLogger(__name__)
 
 # Native Tabular PyTorch approximation for FT-Transformer
 class TabularDeepModel(nn.Module):
@@ -19,8 +21,10 @@ class TabularDeepModel(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(d_in, 128),
             nn.ReLU(),
+            nn.Dropout(p=0.2),
             nn.Linear(128, 64),
             nn.ReLU(),
+            nn.Dropout(p=0.2),
             nn.Linear(64, d_out),
             nn.Sigmoid()
         )
@@ -35,14 +39,14 @@ def train_model():
         print(f"Dataset missing: {csv_path}")
         return
 
-    print("Loading empirical data...")
+    logger.info("Loading empirical data...")
     # Load 5000 rows for rapid local training demonstration
     df = pd.read_csv(csv_path, nrows=5000)
     
     # 4 distinct features required by the frontend risk model
     features = ['AMT_INCOME_TOTAL', 'AMT_CREDIT', 'DAYS_BIRTH', 'EXT_SOURCE_2']
     
-    print("Preprocessing Tabular Features...")
+    logger.info("Preprocessing tabular features...")
     df['EXT_SOURCE_2'] = df['EXT_SOURCE_2'].fillna(df['EXT_SOURCE_2'].mean())
     df['DAYS_BIRTH'] = df['DAYS_BIRTH'] / -365.0 # Transform to positive Age in years
 
@@ -59,10 +63,10 @@ def train_model():
     X_tr = torch.tensor(X_train_scaled, dtype=torch.float32)
     y_tr = torch.tensor(y_train, dtype=torch.float32).unsqueeze(1)
     
-    print("Initializing RTDL Deep Tabular Model Architecture...")
+    logger.info("Initializing model architecture...")
     try:
         import rtdl
-        print(" -> RTDL Loaded. Instantiating FT-Transformer.")
+        logger.info("RTDL loaded — using FT-Transformer")
         class RTDLWrapper(nn.Module):
             def __init__(self):
                 super().__init__()
@@ -77,13 +81,13 @@ def train_model():
                 return self.sig(self.ft(x_num, x_cat))
         model = RTDLWrapper()
     except Exception as e:
-        print(f" -> Fallback to Native PyTorch Tabular Deep Model (NumPy 2.x Compatibility): {e}")
+        logger.info("Fallback to native PyTorch model: %s", e)
         model = TabularDeepModel(len(features), 1)
 
     criterion = nn.BCELoss()
     optimizer = optim.AdamW(model.parameters(), lr=0.005)
     
-    print("Executing Gradient Descent...")
+    logger.info("Training for %d epochs...", epochs)
     epochs = 40
     for epoch in range(epochs):
         model.train()
@@ -98,15 +102,14 @@ def train_model():
         optimizer.step()
         
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch {epoch+1}/{epochs} | Loss: {loss.item():.4f}")
+            logger.info("Epoch %d/%d | Loss: %.4f", epoch + 1, epochs, loss.item())
 
     os.makedirs("models", exist_ok=True)
     
-    print("Exporting specialized '.pt' model weights and '.pkl' tensors...")
+    logger.info("Exporting model weights and scaler...")
     torch.save(model.state_dict(), "models/model.pt")
     joblib.dump(scaler, "models/scaler.pkl")
-    
-    print("✅ PyTorch Live ML Training Complete!")
+    logger.info("Training complete — model saved to models/model.pt")
 
 if __name__ == "__main__":
     train_model()

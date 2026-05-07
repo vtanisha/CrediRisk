@@ -6,9 +6,13 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-# Pass required environment variables during build phase
+# Build-time env vars (baked into the static bundle)
+ARG VITE_API_URL
 ARG VITE_TABLEAU_REPORT_URL
+ARG VITE_SENTRY_DSN
+ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_TABLEAU_REPORT_URL=$VITE_TABLEAU_REPORT_URL
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 
 RUN npm run build
 

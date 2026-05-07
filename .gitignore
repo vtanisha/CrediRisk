@@ -1,6 +1,72 @@
+# ── Claude Code internals ──────────────────────────────────────────────────────
+.claude/
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.Python
+
+# ── Test artifacts ────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.db          # SQLite test databases
+
+# ── ML model binaries (large files — store in DVC / object storage) ───────────
+backend/models/*.pt
+backend/models/*.pkl
+backend/models/*.json
+backend/models/xgb_model.json
+backend/models/xgb_metrics.json
+backend/models/feature_columns.json
+
+# ── Training data ─────────────────────────────────────────────────────────────
 *.csv
-*.csv
-*.csv
-*.csv
-*.csv
-*.csv
+Bank Data Sources/
+
+# ── MLflow ────────────────────────────────────────────────────────────────────
+mlruns/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/coverage/
+*.local
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.sw?
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── One-off scripts ───────────────────────────────────────────────────────────
+backdate_commits.sh
